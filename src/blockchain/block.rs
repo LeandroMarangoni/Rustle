@@ -1,7 +1,7 @@
+use crate::blockchain::transaction::Transaction;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use crate::transaction::Transaction;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Block {
@@ -26,7 +26,12 @@ impl Block {
         }
     }
 
-    pub fn calculate_hash(index: u64, timestamp: i64, previous_hash: &str, transactions: &Vec<Transaction>) -> String {
+    pub fn calculate_hash(
+        index: u64,
+        timestamp: i64,
+        previous_hash: &str,
+        transactions: &Vec<Transaction>,
+    ) -> String {
         let input = format!("{}{}{}{:?}", index, timestamp, previous_hash, transactions);
         let mut hasher = Sha256::new();
         hasher.update(input);

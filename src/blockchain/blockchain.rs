@@ -1,12 +1,12 @@
-use crate::block::Block;
-use crate::transaction::Transaction;
+use crate::blockchain::block::Block;
+use crate::blockchain::transaction::Transaction;
 
 pub struct Blockchain {
     pub chain: Vec<Block>,
 }
 
 impl Blockchain {
-    pub fn new() -> Self{
+    pub fn new() -> Self {
         let genesis_transactions = vec![Transaction::new(
             "System".to_string(),
             "Genesis".to_string(),
@@ -22,7 +22,11 @@ impl Blockchain {
 
     pub fn add_block(&mut self, transactions: Vec<Transaction>) {
         let previous_block = self.chain.last().unwrap();
-        let new_block = Block::new(previous_block.index + 1, previous_block.hash.clone(), transactions);
+        let new_block = Block::new(
+            previous_block.index + 1,
+            previous_block.hash.clone(),
+            transactions,
+        );
         self.chain.push(new_block);
     }
 
@@ -39,7 +43,7 @@ impl Blockchain {
                 current.index,
                 current.timestamp,
                 &current.previous_hash,
-                &current.transactions
+                &current.transactions,
             );
 
             if current.hash != recalculated_hash {
@@ -48,5 +52,4 @@ impl Blockchain {
         }
         true
     }
-
 }
