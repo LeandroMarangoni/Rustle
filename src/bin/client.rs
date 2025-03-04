@@ -1,33 +1,33 @@
-use futures_util::{SinkExt, StreamExt};
-use tokio::time::{Duration, sleep};
+use futures_util::StreamExt;
+use serde::Deserialize;
+use std::error::Error;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
-async fn start_client() -> Result<(), Box<dyn std::error::Error>> {
+#[derive(Deserialize, Debug, Clone)]
+struct Peer {
+    address: String,
+}
+
+async fn start_client() -> Result<(), Box<dyn Error>> {
     let url = "ws://localhost:8080";
     let (mut ws_stream, _) = connect_async(url).await?;
-
     println!("Connected to WebSocket server!");
 
-    ws_stream
-        .send(Message::Text("Hello server!".to_string()))
-        .await?;
+    if let Some(Ok(Message::Text(peers_json))) = ws_stream.next().await {
+        let peers: Vec<Peer> = serde_json::from_str(&peers_json)?;
+        println!("Received peers: {:?}", peers);
 
-    if let Some(response) = ws_stream.next().await {
-        match response {
-            Ok(Message::Text(text)) => {
-                println!("Received from server: {}", text);
-            }
-            Ok(_) => println!("Received an unexpected message type"),
-            Err(e) => println!("Error receiving message: {}", e),
+        for peer in peers {
+            let addr = peer.address.parse()?;
+            connect_to_peer(addr).await?;
         }
     }
 
-    println!("Waiting before closing connection...");
-    sleep(Duration::from_secs(2)).await;
+    Ok(())
+}
 
-    ws_stream.send(Message::Close(None)).await?;
-    println!("Connection closed correctly.");
-
+async fn connect_to_peer(address: std::net::SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
+    println!("Connecting to another peer: {}", address);
     Ok(())
 }
 
