@@ -1,12 +1,9 @@
-use futures_util::StreamExt;
-use serde::Deserialize;
+use futures_util::{SinkExt, StreamExt};
 use std::error::Error;
+use tokio::time::{Duration, sleep};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
-#[derive(Deserialize, Debug, Clone)]
-struct Peer {
-    address: String,
-}
+use rust_blockchain::peer::Peer;
 
 async fn start_client() -> Result<(), Box<dyn Error>> {
     let url = "ws://localhost:8080";
@@ -18,12 +15,22 @@ async fn start_client() -> Result<(), Box<dyn Error>> {
         println!("Received peers: {:?}", peers);
 
         for peer in peers {
-            let addr = peer.address.parse()?;
+            let addr = peer.address;
             connect_to_peer(addr).await?;
         }
     }
 
-    Ok(())
+    loop {
+        ws_stream.send(Message::Text("heartbeat".into())).await?;
+        println!("Sent heartbeat");
+
+        tokio::select! {
+            Some(Ok(Message::Text(text))) = ws_stream.next() => {
+                println!("Received message: {}", text);
+            }
+            _ = sleep(Duration::from_secs(5)) => {}
+        }
+    }
 }
 
 async fn connect_to_peer(address: std::net::SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
