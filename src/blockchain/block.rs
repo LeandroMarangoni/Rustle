@@ -14,7 +14,7 @@ pub struct Block {
 
 impl Block {
     pub fn new(index: u64, previous_hash: String, transactions: Vec<Transaction>) -> Self {
-        let timestamp = Utc::now().timestamp();
+        let timestamp: i64 = Utc::now().timestamp();
         let hash = Block::calculate_hash(index, timestamp, &previous_hash, &transactions);
 
         Block {
@@ -32,7 +32,7 @@ impl Block {
         previous_hash: &str,
         transactions: &Vec<Transaction>,
     ) -> String {
-        let input = format!("{}{}{}{:?}", index, timestamp, previous_hash, transactions);
+        let input: String = format!("{}{}{}{:?}", index, timestamp, previous_hash, transactions);
         let mut hasher = Sha256::new();
         hasher.update(input);
         format!("{:x}", hasher.finalize())

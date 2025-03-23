@@ -1,6 +1,5 @@
 use futures_util::{SinkExt, StreamExt};
 use std::error::Error;
-use tokio::time::{Duration, sleep};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
 use rust_blockchain::peer::Peer;
@@ -21,14 +20,17 @@ async fn start_client() -> Result<(), Box<dyn Error>> {
     }
 
     loop {
-        ws_stream.send(Message::Text("heartbeat".into())).await?;
-        println!("Sent heartbeat");
-
-        tokio::select! {
-            Some(Ok(Message::Text(text))) = ws_stream.next() => {
-                println!("Received message: {}", text);
+        if let Some(Ok(message)) = ws_stream.next().await {
+            match message {
+                Message::Ping(_) => {
+                    ws_stream.send(Message::Pong(vec![])).await?;
+                    println!("Received Ping, sent Pong");
+                }
+                Message::Pong(_) => {
+                    println!("Received Pong");
+                }
+                _ => {}
             }
-            _ = sleep(Duration::from_secs(5)) => {}
         }
     }
 }
